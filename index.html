@@ -1,14 +1,25 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>Stargazers log</title>
-    <link rel="stylesheet" href="style.css">
-  </head>
-  <body>
-    <h1>Stargazers log</h1>
-    <p>A log of the repositories I've starred.</p>
-    <ul id="starred"></ul>
-    <script src="script.js"></script>
-  </body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Stargazers log</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Stargazers log</h1>
+  <p>A log of the repositories I've starred.</p>
+
+  <!-- Accessible region for dynamic content -->
+  <section aria-labelledby="starred-heading">
+    <h2 id="starred-heading" class="visually-hidden">Starred repositories</h2>
+    <noscript>
+      <p>JavaScript is required to load the list. Please enable JavaScript to view the starred repositories.</p>
+    </noscript>
+
+    <ul id="starred" aria-live="polite" aria-busy="false"></ul>
+  </section>
+
+  <script src="script.js"></script>
+</body>
 </html>
