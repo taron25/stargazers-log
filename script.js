@@ -1,8 +1,15 @@
-const status = document.getElementById('status');
-const list = document.getElementById('starred');
 const eventsUrl = './events.json';
 
+// Loader: combines richer rendering from the current branch with incoming branch's ARIA and error UX
 async function loadStarredRepositories() {
+  const status = document.getElementById('status');
+  const container = document.getElementById('starred');
+  if (!container) return;
+
+  // Mark as busy for assistive tech
+  container.setAttribute('aria-busy', 'true');
+  container.setAttribute('aria-live', 'polite');
+
   try {
     const response = await fetch(eventsUrl);
     if (!response.ok) {
@@ -10,54 +17,71 @@ async function loadStarredRepositories() {
     }
 
     const events = await response.json();
-    if (!Array.isArray(events)) {
-      throw new Error('Invalid data format: expected an array of starred repository events.');
-    }
-
-    if (events.length === 0) {
-      status.textContent = 'No starred repositories found.';
+    if (!Array.isArray(events) || events.length === 0) {
+      if (status) status.textContent = 'No starred repositories found.';
+      const msg = document.createElement('p');
+      msg.textContent = 'No starred repositories found.';
+      msg.setAttribute('role', 'status');
+      container.parentNode.insertBefore(msg, container);
       return;
     }
 
-    list.innerHTML = '';
-    events.forEach((event) => {
-      const repoName = event.name || 'Unknown repository';
-      const starredAt = event.starred_at || event.starred || null;
-      const formattedDate = starredAt ? new Date(starredAt).toLocaleDateString() : 'Unknown date';
-      const url = event.url || '#';
+    container.innerHTML = '';
+    const frag = document.createDocumentFragment();
 
-      const item = document.createElement('li');
-      item.className = 'star-item';
+    events.forEach((event) => {
+      const repoName = (event && (event.name || event.repo)) ? String(event.name || event.repo).trim() : '';
+      const starredAt = event && (event.starred_at || event.starred) ? (event.starred_at || event.starred) : null;
+      const formattedDate = starredAt ? (isNaN(new Date(starredAt)) ? String(starredAt) : new Date(starredAt).toLocaleDateString()) : 'Unknown date';
+
+      const li = document.createElement('li');
+      li.className = 'star-item';
 
       const title = document.createElement('h2');
       const link = document.createElement('a');
-      link.href = url;
-      link.textContent = repoName;
+      // Defensive: if repoName looks like owner/repo, encode it; otherwise allow provided url
+      if (event && event.url) {
+        link.href = event.url;
+      } else {
+        link.href = repoName ? `https://github.com/${encodeURIComponent(repoName)}` : '#';
+      }
+      link.textContent = repoName || 'Unknown repository';
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
       title.appendChild(link);
 
+      li.appendChild(title);
+
       const description = document.createElement('p');
-      description.textContent = event.description || 'No description provided.';
+      description.textContent = event && event.description ? event.description : 'No description provided.';
+      li.appendChild(description);
 
-      const time = document.createElement('time');
       if (starredAt) {
+        const time = document.createElement('time');
         time.dateTime = starredAt;
+        time.textContent = `Starred on ${formattedDate}`;
+        li.appendChild(time);
       }
-      time.textContent = `Starred on ${formattedDate}`;
 
-      item.appendChild(title);
-      item.appendChild(description);
-      item.appendChild(time);
-      list.appendChild(item);
+      frag.appendChild(li);
     });
 
-    status.textContent = `${events.length} starred repositories loaded.`;
+    container.appendChild(frag);
+
+    if (status) status.textContent = `${events.length} starred repositories loaded.`;
   } catch (error) {
-    status.textContent = 'Unable to load starred repositories.';
-    status.classList.add('error');
-    console.error(error);
+    if (status) {
+      status.textContent = 'Unable to load starred repositories.';
+      status.classList.add('error');
+    }
+    const errorMsg = document.createElement('p');
+    errorMsg.setAttribute('role', 'status');
+    errorMsg.textContent = 'Could not load starred repositories.';
+    if (container && container.parentNode) container.parentNode.insertBefore(errorMsg, container);
+    console.error('Failed to load events.json', error);
+  } finally {
+    container.removeAttribute('aria-busy');
   }
 }
 
-loadStarredRepositories();
+document.addEventListener('DOMContentLoaded', loadStarredRepositories);

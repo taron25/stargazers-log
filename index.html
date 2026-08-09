@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
@@ -14,7 +14,16 @@
       </header>
 
       <div id="status" role="status" aria-live="polite">Loading starred repositories…</div>
-      <ul id="starred"></ul>
+
+      <!-- Accessible region for dynamic content -->
+      <section aria-labelledby="starred-heading">
+        <h2 id="starred-heading" class="visually-hidden">Starred repositories</h2>
+        <noscript>
+          <p>JavaScript is required to load the list. Please enable JavaScript to view the starred repositories.</p>
+        </noscript>
+
+        <ul id="starred" aria-live="polite" aria-busy="false"></ul>
+      </section>
     </main>
     <script src="script.js"></script>
   </body>
